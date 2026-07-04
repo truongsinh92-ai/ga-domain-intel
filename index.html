@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GA Domain Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d2e;
+    --card2: #1e2235;
+    --border: #2a2f47;
+    --accent: #4f6ef7;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+  .tab-bar { max-width: 900px; margin: 24px auto 0; padding: 0 24px; display: flex; gap: 8px; }
+  .tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted2); padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; }
+  .tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* HEADER */
+  .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #4f6ef7, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .logo span { font-weight: 400; opacity: .7; font-size: 14px; margin-left: 4px; -webkit-text-fill-color: #94a3b8; }
+
+  /* SEARCH */
+  .search-wrap { max-width: 900px; margin: 40px auto 0; padding: 0 24px; }
+  .search-box { display: flex; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px 8px 8px 20px; transition: border-color .2s; }
+  .search-box:focus-within { border-color: var(--accent); }
+  .search-box input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-size: 16px; }
+  .search-box input::placeholder { color: var(--muted); }
+  .search-box button { background: linear-gradient(135deg, #4f6ef7, #7c3aed); border: none; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .2s; white-space: nowrap; }
+  .search-box button:hover { opacity: .85; }
+  .search-box button:disabled { opacity: .5; cursor: default; }
+
+  /* SETTINGS */
+  .settings-bar { max-width: 900px; margin: 12px auto 0; padding: 0 24px; display: flex; justify-content: flex-end; }
+  .settings-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .2s; }
+  .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* MODAL */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 460px; max-width: 95vw; }
+  .modal h3 { font-size: 17px; margin-bottom: 20px; }
+  .modal label { display: block; font-size: 13px; color: var(--muted2); margin-bottom: 6px; }
+  .modal input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; font-family: monospace; }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .btn-save { background: var(--accent); border: none; color: #fff; padding: 9px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
+  .btn-cancel { background: none; border: 1px solid var(--border); color: var(--muted2); padding: 9px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+  /* STATES */
+  .state { max-width: 900px; margin: 60px auto; padding: 0 24px; text-align: center; }
+  .state .icon { font-size: 48px; margin-bottom: 16px; }
+  .state h2 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
+  .state p { color: var(--muted2); font-size: 15px; line-height: 1.6; }
+  .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+  @keyframes dots { 0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'} }
+
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESULTS */
+  .results { max-width: 900px; margin: 32px auto 60px; padding: 0 24px; display: none; }
+  .results.show { display: block; }
+
+  /* DOMAIN HERO */
+  .domain-hero { background: linear-gradient(135deg, #1a1d2e, #1e2235); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+  .domain-favicon { width: 52px; height: 52px; background: var(--bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; overflow: hidden; }
+  .domain-favicon img { width: 100%; height: 100%; object-fit: contain; }
+  .domain-info h1 { font-size: 22px; font-weight: 700; }
+  .domain-info p { color: var(--muted2); font-size: 14px; margin-top: 4px; }
+  .domain-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .tag { background: rgba(79,110,247,.15); color: #7c9ff7; border: 1px solid rgba(79,110,247,.3); padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+  .tag.green { background: rgba(34,197,94,.12); color: #4ade80; border-color: rgba(34,197,94,.3); }
+  .tag.yellow { background: rgba(245,158,11,.12); color: #fbbf24; border-color: rgba(245,158,11,.3); }
+  .tag.red { background: rgba(239,68,68,.12); color: #f87171; border-color: rgba(239,68,68,.3); }
+
+  /* METRIC CARDS */
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:640px){ .metrics-grid { grid-template-columns: repeat(2,1fr); } }
+  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .metric-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .metric-card .value { font-size: 22px; font-weight: 700; }
+  .metric-card .sub { font-size: 12px; color: var(--muted2); margin-top: 4px; }
+  .metric-card .trend { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; margin-top: 6px; }
+  .trend.up { color: var(--green); }
+  .trend.down { color: var(--red); }
+
+  /* TWO-COL */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media(max-width:600px){ .two-col { grid-template-columns: 1fr; } }
+
+  /* SECTION CARD */
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .section-card h3 { font-size: 14px; font-weight: 600; color: var(--muted2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+
+  /* KEYWORDS */
+  .keyword-list { display: flex; flex-direction: column; gap: 10px; }
+  .keyword-row { display: flex; align-items: center; gap: 10px; }
+  .keyword-row .kw { flex: 1; font-size: 14px; }
+  .keyword-bar-wrap { width: 100px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .keyword-bar { height: 100%; background: linear-gradient(90deg, #4f6ef7, #7c3aed); border-radius: 3px; }
+  .keyword-row .vol { font-size: 12px; color: var(--muted2); width: 60px; text-align: right; }
+
+  /* TRAFFIC SOURCES */
+  .source-list { display: flex; flex-direction: column; gap: 12px; }
+  .source-row { display: flex; align-items: center; gap: 12px; }
+  .source-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .source-name { flex: 1; font-size: 14px; }
+  .source-bar-wrap { width: 80px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .source-bar { height: 100%; border-radius: 3px; }
+  .source-pct { font-size: 13px; font-weight: 600; width: 36px; text-align: right; }
+
+  /* COMPANY INFO */
+  .company-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media(max-width:500px){ .company-grid { grid-template-columns: 1fr; } }
+  .company-field { }
+  .company-field .cf-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .company-field .cf-value { font-size: 14px; font-weight: 500; }
+  .company-desc { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted2); line-height: 1.7; }
+
+  /* WHOIS */
+  .whois-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media(max-width:500px){ .whois-grid { grid-template-columns: 1fr; } }
+
+  /* ADS BADGE */
+  .ads-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  .ads-badge.yes { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+  .ads-badge.no { background: rgba(100,116,139,.1); color: var(--muted2); border: 1px solid var(--border); }
+
+  /* DISCLAIMER */
+  .disclaimer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 24px; padding: 12px; background: rgba(255,255,255,.03); border-radius: 8px; }
+
+  /* ERROR */
+  .error-box { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #f87171; padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">GA<span>Intelligence</span></div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-box">
+    <input type="text" id="domainInput" placeholder="Nhập domain cần phân tích (vd: tocotoco.vn)" autocomplete="off" />
+    <button id="analyzeBtn" onclick="analyze()">🔍 Phân tích</button>
+  </div>
+</div>
+<div class="settings-bar">
+  <button class="settings-btn" onclick="openSettings()">⚙️ Cài đặt API Key</button>
+</div>
+
+<!-- MODAL SETTINGS -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h3>⚙️ Cài đặt</h3>
+    <label>Anthropic API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+    <p class="modal-hint">API key lưu trong trình duyệt (localStorage), không gửi $i Ev ngoC�i Anthropic API.<br>Lấy key tại: <a href="https://console.anthropic.com" target="_blank" style="color:#4f6ef7">console.anthropic.com</a></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSettings()">Huy</button>
+      <button class="btn-save" onclick="saveSettings()">Luu</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMPTY STATE -->
+<div class="state" id="emptyState">
+  <div class="icon">🌐</div>
+  <h2>Phân tích domain bất kû</h2>
+  <p>Nhạp tên miền để xem ước tính traffic, global rank,<br>từ khóa, ads và thông tin doanh nghiệp.</p>
+</div>
+
+<!-- LOADING STATE -->
+<div class="state" id="loadingState" style="display:none">
+  <div class="spinner"></div>
+  <h2>Đang phân tích<span class="loading-dots"></span></h2>
+  <p id="loadingDomain" style="color:#4f6ef7;font-weight:600;font-size:17px;margin-top:4px"></p>
+</div>
+
+<!-- ERROR STATE -->
+<div class="state" id="errorState" style="display:none">
+  <div class="icon">⚠️</div>
+  <h2 id="errorTitle">Co lỗi x�ảy ra</h2>
+  <p id="errorMsg"></p>
+</div>
+
+<!-- RESULTS -->
+<div class="results" id="resultsContainer"></div>
+
+<!-- SETTINGS API KEY CHECK NOTICE -->
+<div class="state" id="noKeyState" style="display:none">
+  <div class="icon">🔑</div>
+  <h2>Chưa có API Key</h2>
+  <p>Nhấn <strong style="color:#4f6ef7">⚙️ Cài đặt API Ket</strong> và nhập Anthropic API key để bắt đầu.</p>
+</div>
+
+<script>
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const SOURCE_COLORS = ['#4f6ef7','#7c3aed','#22c55e','#f59e0b','#ef4444'];
+const SOURCE_NAMES = { direct:'Direct', organic_search:'Organic Search', paid_search:'Paid Search', social:'Social', referral:'Referral', email:'Email', display:'Display' };
+
+function getKey() { return localStorage.getItem('ga_intel_api_key') || ''; }
+function openSettings() {
+  document.getElementById('apiKeyInput').value = getKey();
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+function saveSettings() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  localStorage.setItem('ga_intel_api_key', k);
+  closeSettings();
+}
+
+function showState(id) {
+  ['emptyState','loadingState','errorState',"noKeyState'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+  document.getElementById('resultsContainer').classList.remove('show');
+}
+
+document.getElementById('domainInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+
+async function fetchSimilarWeb(domain) {
+  const endpoints = [
+    `https://data.similarweb.com/api/v1/data?domain=${domain}`,
+    `https://api.similarweb.com/v1/website/${domain}/total-traffic-and-engagement/visits?api_key=&start_date=2025-01&end_date=2025-06&main_domain_only=false&granularity=monthly`
+  ];
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && Object.keys(json).length > 2) return json;
+      }
+    } catch(e) {}
+  }
+  return null;
+}
+
+function renderSwTab(domain, sw) {
+  if (!sw) return `<div style="padding:40px;text-align:center;color:#64748b">
+    <div style="font-size:40px;margin-bottom:12px">🔒</div>
+    <h3 style="color:#e2e8f0">Không lấy dược dữ liệu SimilarWeb</h3>
+    <p>SimilarWeb chặn request từ server.<br>Dùng <a href="https://www.similarweb.com/website/${domain}/" target="_blank" style="color:#4f6ef7">similarweb.com</a> trực tiếp or cai extension.</p>
+  </div>`;
+
+  const visits = sw.EstimatedMonthlyVisits || {};
+  const months = Object.keys(visits).sort();
+  const latestVisits = months.length ? visits[months[months.length-1]] : 0;
+  const gr = sw.GlobalRank?.Rank;
+  const cr = sw.CountryRank?.Rank;
+  const eng = sw.Engagments || {};
+  const bounce = eng.BounceRate ? `${(eng.BounceRate*100).toFixed(1)}%` : 'N/A';
+  const ppv = eng.PagePerVisit ? `~${eng.PagePerVisit.toFixed(1)}` : 'N/A';
+  const dur = eng.TimeOnSite ? `${Math.floor(eng.TimeOnSite/60)}:${String(Math.floor(eng.TimeOnSite%60)).padStart(2,'0')}` : 'N/A';
+  const ts = sw.TrafficSources || {};
+  const kws = sw.TopKeywords || [];
+
+  const sourceColors = {Direct:'#4f6ef7',Search:'#22c55e',Social:'#f59e0b',Referrals:'#ec4899','Paid Referrals':'#ef4444',Mail:'#06b6d4'};
+  const sourcesHtml = Object.entries(ts).map(([k,v])=>`
+    <div class="source-row">
+      <span class="source-dot" style="background:${sourceColors[k]||'#64748b'}"></span>
+      <span class="source-name">${k}</span>
+      <div class="source-bar-wrap"><div class="source-bar" style="width:${Math.round(v*100)}%;background:${sourceColors[k]||'#64748b'}"></div></div>
+      <span class="source-pct">${Math.round(v*100)}%</span>
+    </div>`).join('');
+
+  const kwsHtml = kws.slice(0,8).map(k=>`
+    <div class="kw-row">
+      <span class="kw-name">${k.Name||k.keyword||''}</span>
+      <div class="kw-bar-wrap"><div class="kw-bar" style="width:${k.PercentTraffic?Math.round(k.PercentTraffic*100):40}%"></div></div>
+      <span class="kw-vol">${k.EstimatedValue?'~' +Math.round(k.EstimatedValue).toLocaleString()+'/tháng':'N/A'}</span>
+    </div>`).join('') || '<p style="color:#64748b">Khong co du lieu keyword</p>';
+
+  return `
+  <div class="sw-badge" style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 14px;background:#1a1d2e;border:1px solid #2a2f47;border-radius:8px;width:fit-content">
+    <img src="https://www.similarweb.com/favicon.ico" style="width:16px;height:16px" onerror="this.style.display='none'"/>
+    <span style="color:#94a3b8;font-size:13px">Nguõn: SimilarWeb Free Data</span>
+    <a href="https://www.similarweb.com/website/${domain}/" target="_blank" style="color:#4f6ef7;font-size:12px">Xem đầy đủ →</a>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">MONTHLY VISITS</div><div class="stat-value">${latestVisits?'~'+latestVisits.toLocaleString():'N/A'}</div></div>
+    <div class="stat-card"><div class="stat-label">GLOBAL RANK</div><div class="stat-value">${gr?'#'+gr.toLocaleString():'N/A'}</div></div>
+    <div class="stat-card"><div class="stat-label">BOUNCE RATE</div><div class="stat-value">${bounce}</div></div>
+    <div class="stat-card"><div class="stat-label">PAGES/VISIT</div><div class="stat-value">${ppv}</div><div class="stat-sub">Avg ${dur}</div></div>
+  </div>
+  <div class="two-col">
+    <div class="section-card"><h3>🔑 SECTION KEYWORDS</h3>${kwsHtml}</div>
+    <div class="section-card"><h3>📡 NGUON TRAFFIC</h3>${sourcesHtml||'<p style="color:#64748b">Khong co du lieu</p>'}</div>
+  </div>`;
+}
+
+async function analyze() {
+  let domain = document.getElementById('domainInput').value.trim();
+  if (!domain) return;
+  domain = domain.replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  document.getElementById('domainInput').value = domain;
+
+  const key = getKey();
+  if (!key) { showState('noKeyState'); return; }
+
+  showState('loadingState');
+  document.getElementById('loadingDomain').textContent = domain;
+  document.getElementById('analyzeBtn').disabled = true;
+
+  try {
+    const [dfsData, swData] = await Promise.allSettled([
+      callClaude(domain, key),
+      fetchSimilarWeb(domain)
+    ]);
+    const dfs = dfsData.status === 'fulfilled' ? dfsData.value : null;
+    const sw = swData.status === 'fulfilled' ? swData.value : null;
+    renderResults(domain, dfs, sw);
+  } catch(e) {
+    showState('errorState');
+    document.getElementById('errorTitle').textContent = 'Loi phan tich';
+    document.getElementById('errorMsg').textContent = e.message || 'Khong the ket noi. Kiem tra API key va thu lai.';
+  } finally {
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+async function callClaude(domain, key) {
+  const prompt = `Phan tich domain: ${domain}\nTra ve JSON hop le. Cau truc chinh xac as described in original app.`;
+
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+  let data;
+  if (isLocal) {
+    const res = await fetch('/analyze', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ domain, api_key: key })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    data = await res.json();
+  } else {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-request-override': 'allow'
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    const text = json.content?.[0]?.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Khong doc duoc JSON.');
+    data = JSON.parse(match[0]);
+  }
+  return data;
+}
+
+function renderResults(domain, d, sw) {
+  const o = d.overview || {};
+  const c = d.company || {};
+  const w = d.whois || {};
+  const ads = d.ads || {};
+  const keywords = d.keywords || [];
+  const sources = d.traffic_sources || [];
+
+  const confidenceLabel = { high: 'Do tin cay cao', medium: 'Uoc tinh', low: 'Du lieu han che' }[d.confidence] || 'Uoc tinh';
+  const confidenceTag = { high: 'green', medium: 'yellow', low: 'red' }[d.confidence] || 'yellow';
+
+  let html = `
+  <div class="domain-hero">
+    <div class="domain-favicon"><img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" onerror="this.parentNode.innerHTML= ����""/></div>
+    <div class="domain-info">
+      <h1>${domain}</h1>
+      <p>${c.name && c.name !== 'N/A' ? c.name : ''} ${c.industry && c.industry !== 'N/A' ? '· ' + c.industry : ''}</p>
+      <div class="domain-tags">
+        <span class="tag ${confidenceTag}">${confidenceLabel}</span>
+        ${c.hq && c.hq !== 'N/A' ? `<span class="tag">📍 ${c.hq}</span>` : ''}
+        ${ads.running ? '<span class="tag green">Dang chay Ads</span>' : '<span class="tag">Khong co Ads</span>'}
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card"><div class="label">Monthly Visits</div><div class="value" style="font-size:18px">${o.monthly_visits || 'N/A'}</div></div>
+    <div class="metric-card"><div class="label">Global Rank</div><div class="value" style="font-size:18px">${o.global_rank || 'N/A'}</div></div>
+    <div class="metric-card"><div class="label">Country Rank</div><div class="value" style="font-size:16px">${o.country_rank || 'N/A'}</div></div>
+    <div class="metric-card"><div class="label">Bounce Rate</div><div class="value">${o.bounce_rate || 'N/A'}</div></div>
+  </div>
+
+  <div class="two-col">
+    <div class="section-card"><h3>Top Keywords</h3>
+      <div class="keyword-list">${keywords.slice(0,6).map(k => `
+        <div class="keyword-row"><span class="kw">${k.kw}</span><div class="keyword-bar-wrap"><div class="keyword-bar" style="width:${k.bar||50}%"></div></div><span class="vol">${k.vol}</span></div>`).join('')}</div>
+    </div>
+    <div class="section-card"><h3>Nguon Traffic</h3>
+      <div class="source-list">${sources.slice(0,6).map((s,i) => `
+        <div class="source-row"><div class="source-dot" style="background:${SOURCE_COLORS[i%SOURCE_COLORS.length]}"></div><span class="source-name">${SOURCE_NAMES[s.name]||s.name}</span><div class="source-bar-wrap"><div class="source-bar" style="width:${s.pct}%;background:${SOURCE_COLORS[i%SOURCE_COLORS.length]}"></div></div><span class="source-pct">${s.pct}%</span></div>`).join('')}</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section-card"><h3>Thong Tin Doanh Nghiep</h3>
+      <div class="company-grid">
+        <div class="company-field"><div class="cf-label">Ten cong ty</div><div class="cf-value">${c.name||'N/A'}</div></div>
+        <div class="company-field"><div class="cf-label">Nganh</div><div class="cf-value">${c.industry||'N/A'}</div></div>
+        <div class="company-field"><div class="cf-label">Nam thanh lap</div><div class="cf-value">${c.founded_year||'N/A'}</div></div>
+        <div class="company-field"><div class="cf-label">Nam tao website</div><div class="cf-value">${c.domain_created||w.created||'N/A'}</div></div>
+      </div>
+      ${c.description && c.description !== 'N/A' ? `<div class="company-desc">${c.description}</div>` : ''}
+    </div>
+    <div class="section-card"><h3>Ads & WHOIS</h3>
+      <div class="ads-badge ${ads.running ? 'yes' : 'no'}">${ads.running ? 'Dang chay Ads' : 'Khong chay Ads'}</div>
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div class="whois-grid">
+          <div class="company-field"><div class="cf-label">Registrar</div><div class="cf-value" style="font-size:13px">${w.registrar||'N/A'}</div></div>
+          <div class="company-field"><div class="cf-label">Tao ngay</div><div class="cf-value" style="font-size:13px">${w.created||'N/A'}</div></div>
+          <div class="company-field"><div class="cf-label">Het han</div><div class="cf-value" style="font-size:13px">${w.expires||'N/A'}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  const fullHtml = `
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('dfs',this)">DataForSEO + AI</button>
+    <button class="tab-btn" onclick="switchTab('sw',this)">SimilarWeb</button>
+  </div>
+  <div id="tab-dfs" class="tab-panel">${html}</div>
+  <div id="tab-sw" class="tab-panel" style="display:none">${renderSwTab(domain, sw)}</div>`;
+
+  ['emptyState','loadingState','errorState','noKeyState'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = fullHtml;
+  container.classList.add('show');
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).style.display = 'block';
+  btn.classList.add('active');
+}
+
+window.onload = () => {
+  showState('emptyState');
+  if (!getKey()) {
+    document.querySelector('.settings-btn').style.borderColor = '#4f6ef7';
+    document.querySelector('.settings-btn').style.color = '#4f6ef7';
+  }
+};
+</script>
+</body>
+</html>
