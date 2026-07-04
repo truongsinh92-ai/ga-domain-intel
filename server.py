@@ -107,7 +107,7 @@ def build_result_from_sw(domain, sw, keywords_dfs, whois_dfs, claude_company):
         latest_key = sorted(visits.keys())[-1] if visits else None
         monthly = visits.get(latest_key, 0) if latest_key else 0
 
-    monthly_str = f"}{monthly:,.0f}/tháng" if monthly else 'N/A'
+    monthly_str = f"~{monthly:,.0f}/tháng" if monthly else 'N/A'
 
     global_rank = sw.get('GlobalRank', {}).get('Rank', None)
     global_rank_str = f"#{global_rank:,}" if global_rank else 'Không xác định'
@@ -212,7 +212,7 @@ def build_result(domain, traffic, keywords, whois, claude_company):
     # --- Overview ---
     if traffic:
         mv = traffic.get('visits', None)
-        monthly = f"}{mv:,}/tháng" if mv else 'N/A'
+        monthly = f"~{mv:,}/tháng" if mv else 'N/A'
         gr = traffic.get('rank', None)
         global_rank = f"#{gr:,}" if gr else 'Không xác định'
         bounce = traffic.get('bounce_rate', None)
