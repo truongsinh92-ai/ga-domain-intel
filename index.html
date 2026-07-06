@@ -217,9 +217,15 @@ const SOURCE_NAMES = { direct:'Direct', organic_search:'Organic Search', paid_se
 function getKey() { return localStorage.getItem('ga_intel_api_key') || ''; }
 function openSettings() {
   document.getElementById('apiKeyInput').value = getKey();
-  document.getElementById('settingsModal').classList.add('open');
+  var m = document.getElementById('settingsModal');
+  m.style.display = 'flex';
+  m.classList.add('open');
 }
-function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+function closeSettings() {
+  var m = document.getElementById('settingsModal');
+  m.style.display = 'none';
+  m.classList.remove('open');
+}
 function saveSettings() {
   const k = document.getElementById('apiKeyInput').value.trim();
   localStorage.setItem('ga_intel_api_key', k);
