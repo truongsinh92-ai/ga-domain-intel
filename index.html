@@ -1,367 +1,288 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>GA Domain Intelligence</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
-    --bg: #0f1117;
-    --card: #1a1d2e;
-    --card2: #1e2235;
-    --border: #2a2f47;
-    --accent: #4f6ef7;
-    --accent2: #7c3aed;
-    --green: #22c55e;
-    --red: #ef4444;
-    --yellow: #f59e0b;
+    --bg: #0a0c14;
+    --card: #111827;
+    --card2: #1a2035;
+    --border: #1f2d45;
     --text: #e2e8f0;
     --muted: #64748b;
     --muted2: #94a3b8;
+    --accent: #4f6ef7;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --pink: #ec4899;
   }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
-  .tab-bar { max-width: 900px; margin: 24px auto 0; padding: 0 24px; display: flex; gap: 8px; }
-  .tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted2); padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; }
-  .tab-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
   /* HEADER */
-  .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
-  .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #4f6ef7, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .logo span { font-weight: 400; opacity: .7; font-size: 14px; margin-left: 4px; -webkit-text-fill-color: #94a3b8; }
+  .header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 50; }
+  .logo { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+
+  /* API KEY BAR */
+  .key-bar { background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .key-bar.hidden { display: none; }
+  .key-bar label { font-size: 12px; color: var(--muted2); white-space: nowrap; }
+  .key-bar input { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; font-family: monospace; outline: none; }
+  .key-bar input:focus { border-color: var(--accent); }
+  .key-bar .btn-save { background: var(--accent); color: #fff; border: none; padding: 8px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .key-saved { font-size: 12px; color: var(--muted2); display: flex; align-items: center; gap: 8px; flex: 1; }
+  .key-saved .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; flex-shrink: 0; }
+  .key-saved .change-btn { color: var(--accent); background: none; border: none; font-size: 12px; cursor: pointer; padding: 0; }
 
   /* SEARCH */
-  .search-wrap { max-width: 900px; margin: 40px auto 0; padding: 0 24px; }
-  .search-box { display: flex; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px 8px 8px 20px; transition: border-color .2s; }
-  .search-box:focus-within { border-color: var(--accent); }
-  .search-box input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-size: 16px; }
+  .search-wrap { padding: 24px 20px 16px; max-width: 780px; margin: 0 auto; }
+  .search-box { display: flex; gap: 10px; }
+  .search-box input { flex: 1; background: var(--card); border: 1.5px solid var(--border); color: var(--text); padding: 14px 18px; border-radius: 12px; font-size: 15px; outline: none; transition: border-color .2s; }
+  .search-box input:focus { border-color: var(--accent); }
   .search-box input::placeholder { color: var(--muted); }
-  .search-box button { background: linear-gradient(135deg, #4f6ef7, #7c3aed); border: none; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .2s; white-space: nowrap; }
-  .search-box button:hover { opacity: .85; }
-  .search-box button:disabled { opacity: .5; cursor: default; }
-
-  /* SETTINGS */
-  .settings-bar { max-width: 900px; margin: 12px auto 0; padding: 0 24px; display: flex; justify-content: flex-end; }
-  .settings-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .2s; }
-  .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* MODAL */
-  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; align-items: center; justify-content: center; }
-  .modal-bg.open { display: flex; }
-  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 460px; max-width: 95vw; }
-  .modal h3 { font-size: 17px; margin-bottom: 20px; }
-  .modal label { display: block; font-size: 13px; color: var(--muted2); margin-bottom: 6px; }
-  .modal input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; font-family: monospace; }
-  .modal input:focus { border-color: var(--accent); }
-  .modal-hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
-  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
-  .btn-save { background: var(--accent); border: none; color: #fff; padding: 9px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
-  .btn-cancel { background: none; border: 1px solid var(--border); color: var(--muted2); padding: 9px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .btn-analyze { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity .2s; }
+  .btn-analyze:disabled { opacity: .5; cursor: not-allowed; }
 
   /* STATES */
-  .state { max-width: 900px; margin: 60px auto; padding: 0 24px; text-align: center; }
-  .state .icon { font-size: 48px; margin-bottom: 16px; }
-  .state h2 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
-  .state p { color: var(--muted2); font-size: 15px; line-height: 1.6; }
-  .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
-  @keyframes dots { 0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'} }
-
-  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 20px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .state { text-align: center; padding: 60px 20px; max-width: 480px; margin: 0 auto; }
+  .state .icon { font-size: 52px; margin-bottom: 16px; }
+  .state h2 { font-size: 20px; margin-bottom: 8px; color: var(--text); }
+  .state p { color: var(--muted2); font-size: 14px; line-height: 1.6; }
+  .loading-dots { display: flex; gap: 6px; justify-content: center; margin-top: 20px; }
+  .loading-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: .2s; }
+  .loading-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(.7);opacity:.5} 40%{transform:scale(1);opacity:1} }
 
   /* RESULTS */
-  .results { max-width: 900px; margin: 32px auto 60px; padding: 0 24px; display: none; }
-  .results.show { display: block; }
+  #resultsContainer { max-width: 780px; margin: 0 auto; padding: 0 20px 40px; display: none; }
+  #resultsContainer.show { display: block; }
 
   /* DOMAIN HERO */
-  .domain-hero { background: linear-gradient(135deg, #1a1d2e, #1e2235); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
-  .domain-favicon { width: 52px; height: 52px; background: var(--bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; overflow: hidden; }
-  .domain-favicon img { width: 100%; height: 100%; object-fit: contain; }
-  .domain-info h1 { font-size: 22px; font-weight: 700; }
-  .domain-info p { color: var(--muted2); font-size: 14px; margin-top: 4px; }
-  .domain-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .tag { background: rgba(79,110,247,.15); color: #7c9ff7; border: 1px solid rgba(79,110,247,.3); padding: 3px 10px; border-radius: 20px; font-size: 12px; }
-  .tag.green { background: rgba(34,197,94,.12); color: #4ade80; border-color: rgba(34,197,94,.3); }
-  .tag.yellow { background: rgba(245,158,11,.12); color: #fbbf24; border-color: rgba(245,158,11,.3); }
-  .tag.red { background: rgba(239,68,68,.12); color: #f87171; border-color: rgba(239,68,68,.3); }
+  .domain-hero { display: flex; align-items: center; gap: 16px; padding: 20px 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .domain-favicon { width: 52px; height: 52px; background: var(--card); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 24px; flex-shrink: 0; }
+  .domain-favicon img { width: 40px; height: 40px; object-fit: contain; }
+  .domain-info h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .domain-info p { font-size: 13px; color: var(--muted2); margin-bottom: 8px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--card2); color: var(--muted2); border: 1px solid var(--border); }
+  .tag.green { background: rgba(34,197,94,.1); color: var(--green); border-color: rgba(34,197,94,.3); }
+  .tag.yellow { background: rgba(245,158,11,.1); color: var(--yellow); border-color: rgba(245,158,11,.3); }
+  .tag.red { background: rgba(239,68,68,.1); color: var(--red); border-color: rgba(239,68,68,.3); }
 
-  /* METRIC CARDS */
-  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-  @media(max-width:640px){ .metrics-grid { grid-template-columns: repeat(2,1fr); } }
-  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-  .metric-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
-  .metric-card .value { font-size: 22px; font-weight: 700; }
-  .metric-card .sub { font-size: 12px; color: var(--muted2); margin-top: 4px; }
-  .metric-card .trend { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; margin-top: 6px; }
-  .trend.up { color: var(--green); }
-  .trend.down { color: var(--red); }
+  /* METRICS GRID */
+  .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media(min-width:520px) { .metrics-grid { grid-template-columns: repeat(4, 1fr); } }
+  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .metric-card .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .metric-card .value { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .metric-card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-  /* TWO-COL */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
-  @media(max-width:600px){ .two-col { grid-template-columns: 1fr; } }
+  /* TWO COL */
+  .two-col { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+  @media(min-width:600px) { .two-col { grid-template-columns: 1fr 1fr; } }
 
   /* SECTION CARD */
-  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .section-card h3 { font-size: 14px; font-weight: 600; color: var(--muted2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .section-card h3 { font-size: 13px; font-weight: 600; color: var(--muted2); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .4px; }
 
   /* KEYWORDS */
-  .keyword-list { display: flex; flex-direction: column; gap: 10px; }
-  .keyword-row { display: flex; align-items: center; gap: 10px; }
-  .keyword-row .kw { flex: 1; font-size: 14px; }
-  .keyword-bar-wrap { width: 100px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-  .keyword-bar { height: 100%; background: linear-gradient(90deg, #4f6ef7, #7c3aed); border-radius: 3px; }
-  .keyword-row .vol { font-size: 12px; color: var(--muted2); width: 60px; text-align: right; }
+  .kw-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .kw-row .kw { font-size: 13px; flex: 0 0 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kw-bar-wrap { flex: 1; height: 4px; background: var(--card2); border-radius: 2px; overflow: hidden; }
+  .kw-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; }
+  .kw-row .vol { font-size: 11px; color: var(--muted2); flex: 0 0 80px; text-align: right; }
 
-  /* TRAFFIC SOURCES */
-  .source-list { display: flex; flex-direction: column; gap: 12px; }
-  .source-row { display: flex; align-items: center; gap: 12px; }
-  .source-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .source-name { flex: 1; font-size: 14px; }
-  .source-bar-wrap { width: 80px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-  .source-bar { height: 100%; border-radius: 3px; }
-  .source-pct { font-size: 13px; font-weight: 600; width: 36px; text-align: right; }
+  /* SOURCES */
+  .src-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .src-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .src-name { font-size: 13px; flex: 1; }
+  .src-bar-wrap { flex: 0 0 80px; height: 4px; background: var(--card2); border-radius: 2px; overflow: hidden; }
+  .src-bar { height: 100%; border-radius: 2px; }
+  .src-pct { font-size: 12px; color: var(--muted2); flex: 0 0 32px; text-align: right; }
 
-  /* COMPANY INFO */
-  .company-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media(max-width:500px){ .company-grid { grid-template-columns: 1fr; } }
-  .company-field { }
-  .company-field .cf-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-  .company-field .cf-value { font-size: 14px; font-weight: 500; }
-  .company-desc { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted2); line-height: 1.7; }
+  /* COMPANY GRID */
+  .company-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cf-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .cf-value { font-size: 13px; color: var(--text); }
+  .company-desc { font-size: 13px; color: var(--muted2); line-height: 1.6; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+  /* ADS */
+  .ads-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 8px; margin-bottom: 12px; }
+  .ads-badge.yes { background: rgba(34,197,94,.1); color: var(--green); }
+  .ads-badge.no { background: var(--card2); color: var(--muted2); }
 
   /* WHOIS */
-  .whois-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media(max-width:500px){ .whois-grid { grid-template-columns: 1fr; } }
+  .whois-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-  /* ADS BADGE */
-  .ads-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-size: 15px; font-weight: 600; margin-bottom: 12px; }
-  .ads-badge.yes { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
-  .ads-badge.no { background: rgba(100,116,139,.1); color: var(--muted2); border: 1px solid var(--border); }
+  /* TABS */
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; background: var(--card); border-radius: 10px; padding: 4px; border: 1px solid var(--border); }
+  .tab-btn { flex: 1; padding: 8px; border-radius: 7px; border: none; background: transparent; color: var(--muted2); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .2s; }
+  .tab-btn.active { background: var(--card2); color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
-  /* DISCLAIMER */
-  .disclaimer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 24px; padding: 12px; background: rgba(255,255,255,.03); border-radius: 8px; }
+  /* SIMILARWEB CTA */
+  .sw-cta { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
+  .sw-cta h3 { font-size: 16px; margin-bottom: 8px; }
+  .sw-cta p { font-size: 13px; color: var(--muted2); margin-bottom: 16px; line-height: 1.6; }
+  .btn-sw { display: inline-flex; align-items: center; gap: 8px; background: #0a66c2; color: #fff; text-decoration: none; padding: 12px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; }
+  .btn-sw:hover { opacity: .9; }
+
+  /* CONFIDENCE */
+  .confidence-bar { height: 3px; background: var(--card2); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .confidence-fill { height: 100%; border-radius: 2px; }
 
   /* ERROR */
-  .error-box { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #f87171; padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-bottom: 20px; }
+  .error-box { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: 12px; padding: 16px; margin: 20px; }
+  .error-box h3 { color: var(--red); font-size: 14px; margin-bottom: 6px; }
+  .error-box p { color: var(--muted2); font-size: 13px; }
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-  <div class="logo">GA<span>Intelligence</span></div>
+  <div class="logo"><span>GA</span> Intelligence</div>
+</div>
+
+<!-- API KEY BAR -->
+<div class="key-bar" id="keyBarInput">
+  <label>🔑 Anthropic API Key:</label>
+  <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" />
+  <button class="btn-save" onclick="saveKey()">Lưu key</button>
+</div>
+<div class="key-bar hidden" id="keyBarSaved">
+  <div class="key-saved">
+    <span class="dot"></span>
+    <span>API Key đã lưu</span>
+    <button class="change-btn" onclick="changeKey()">Đổi key</button>
+  </div>
 </div>
 
 <!-- SEARCH -->
 <div class="search-wrap">
   <div class="search-box">
-    <input type="text" id="domainInput" placeholder="Nhập domain cần phân tích (vd: tocotoco.vn)" autocomplete="off" />
-    <button id="analyzeBtn" onclick="analyze()">🔍 Phân tích</button>
-  </div>
-</div>
-<div class="settings-bar">
-  <button class="settings-btn" onclick="openSettings()">⚙️ Cài đặt API Key</button>
-</div>
-
-<!-- MODAL SETTINGS -->
-<div class="modal-bg" id="settingsModal">
-  <div class="modal">
-    <h3>⚙️ Cài đặt</h3>
-    <label>Anthropic API Key</label>
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." />
-    <p class="modal-hint">API key lưu trong trình duyệt (localStorage), không gửi đi đâu ngoài Anthropic API.<br>Lấy key tại: <a href="https://console.anthropic.com" target="_blank" style="color:#4f6ef7">console.anthropic.com</a></p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeSettings()">Hủy</button>
-      <button class="btn-save" onclick="saveSettings()">Lưu</button>
-    </div>
+    <input type="text" id="domainInput" placeholder="Nhập domain: tocotoco.vn, highlands.com.vn..." autocomplete="off" />
+    <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">🔍 Phân tích</button>
   </div>
 </div>
 
-<!-- EMPTY STATE -->
+<!-- STATES -->
 <div class="state" id="emptyState">
   <div class="icon">🌐</div>
   <h2>Phân tích domain bất kỳ</h2>
-  <p>Nhập tên miền để xem ước tính traffic, global rank,<br>từ khóa, ads và thông tin doanh nghiệp.</p>
+  <p>Traffic · Global rank · Keywords · Ads · Thông tin doanh nghiệp</p>
 </div>
 
-<!-- LOADING STATE -->
 <div class="state" id="loadingState" style="display:none">
-  <div class="spinner"></div>
-  <h2>Đang phân tích<span class="loading-dots"></span></h2>
-  <p id="loadingDomain" style="color:#4f6ef7;font-weight:600;font-size:17px;margin-top:4px"></p>
+  <div class="icon">⚡</div>
+  <h2>Đang phân tích <span id="loadingDomain"></span></h2>
+  <p>Đang thu thập dữ liệu từ AI...</p>
+  <div class="loading-dots"><span></span><span></span><span></span></div>
 </div>
 
-<!-- ERROR STATE -->
-<div class="state" id="errorState" style="display:none">
-  <div class="icon">⚠️</div>
-  <h2 id="errorTitle">Có lỗi xảy ra</h2>
-  <p id="errorMsg"></p>
+<div style="display:none" id="errorState">
+  <div class="error-box">
+    <h3>⚠️ <span id="errorTitle">Lỗi</span></h3>
+    <p id="errorMsg"></p>
+  </div>
 </div>
 
 <!-- RESULTS -->
-<div class="results" id="resultsContainer"></div>
-
-<!-- SETTINGS API KEY CHECK NOTICE -->
-<div class="state" id="noKeyState" style="display:none">
-  <div class="icon">🔑</div>
-  <h2>Chưa có API Key</h2>
-  <p>Nhấn <strong style="color:#4f6ef7">⚙️ Cài đặt API Key</strong> và nhập Anthropic API key để bắt đầu.</p>
-</div>
+<div id="resultsContainer"></div>
 
 <script>
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
-const SOURCE_COLORS = ['#4f6ef7','#7c3aed','#22c55e','#f59e0b','#ef4444'];
-const SOURCE_NAMES = { direct:'Direct', organic_search:'Organic Search', paid_search:'Paid Search', social:'Social', referral:'Referral', email:'Email', display:'Display' };
+const SRC_COLORS = ['#4f6ef7','#7c3aed','#22c55e','#f59e0b','#ef4444','#ec4899'];
+const SRC_NAMES = { direct:'Direct', organic_search:'Organic', paid_search:'Paid Search', social:'Social', referral:'Referral', email:'Email', display:'Display' };
 
-function getKey() { return localStorage.getItem('ga_intel_api_key') || ''; }
-function openSettings() {
-  var m = document.getElementById('settingsModal');
-  document.getElementById('apiKeyInput').value = getKey();
-  m.style.display = 'flex';
-}
-    else { localStorage.removeItem('ga_intel_api_key'); }
-  }
-}
-function closeSettings() {
-  document.getElementById('settingsModal').style.display = 'none';
-}
-function saveSettings() {
+// ── KEY MANAGEMENT ──────────────────────────────────────────
+function getKey() { return localStorage.getItem('ga_api_key') || ''; }
+
+function saveKey() {
   const k = document.getElementById('apiKeyInput').value.trim();
-  localStorage.setItem('ga_intel_api_key', k);
-  closeSettings();
+  if (!k) return;
+  localStorage.setItem('ga_api_key', k);
+  document.getElementById('keyBarInput').classList.add('hidden');
+  document.getElementById('keyBarSaved').classList.remove('hidden');
 }
 
-function showState(id) {
-  ['emptyState','loadingState','errorState','noKeyState'].forEach(s => {
-    document.getElementById(s).style.display = s === id ? 'block' : 'none';
-  });
-  document.getElementById('resultsContainer').classList.remove('show');
+function changeKey() {
+  localStorage.removeItem('ga_api_key');
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('keyBarInput').classList.remove('hidden');
+  document.getElementById('keyBarSaved').classList.add('hidden');
 }
 
-document.getElementById('domainInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') analyze();
-});
-
-async function fetchSimilarWeb(domain) {
-  const endpoints = [
-    `https://data.similarweb.com/api/v1/data?domain=${domain}`,
-    `https://api.similarweb.com/v1/website/${domain}/total-traffic-and-engagement/visits?api_key=&start_date=2025-01&end_date=2025-06&main_domain_only=false&granularity=monthly`
-  ];
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (res.ok) {
-        const json = await res.json();
-        if (json && Object.keys(json).length > 2) return json;
-      }
-    } catch(e) {}
+function initKeyBar() {
+  if (getKey()) {
+    document.getElementById('keyBarInput').classList.add('hidden');
+    document.getElementById('keyBarSaved').classList.remove('hidden');
   }
-  return null;
 }
 
-function renderSwTab(domain, sw) {
-  if (!sw) return `<div style="padding:40px;text-align:center;color:#64748b">
-    <div style="font-size:40px;margin-bottom:12px">🔒</div>
-    <h3 style="color:#e2e8f0">Không lấy được dữ liệu SimilarWeb</h3>
-    <p>SimilarWeb chặn request từ server.<br>Dùng <a href="https://www.similarweb.com/website/${domain}/" target="_blank" style="color:#4f6ef7">similarweb.com</a> trực tiếp hoặc cài extension.</p>
-  </div>`;
-
-  const visits = sw.EstimatedMonthlyVisits || {};
-  const months = Object.keys(visits).sort();
-  const latestVisits = months.length ? visits[months[months.length-1]] : 0;
-  const gr = sw.GlobalRank?.Rank;
-  const cr = sw.CountryRank?.Rank;
-  const eng = sw.Engagments || {};
-  const bounce = eng.BounceRate ? `${(eng.BounceRate*100).toFixed(1)}%` : 'N/A';
-  const ppv = eng.PagePerVisit ? `~${eng.PagePerVisit.toFixed(1)}` : 'N/A';
-  const dur = eng.TimeOnSite ? `${Math.floor(eng.TimeOnSite/60)}:${String(Math.floor(eng.TimeOnSite%60)).padStart(2,'0')}` : 'N/A';
-  const ts = sw.TrafficSources || {};
-  const kws = sw.TopKeywords || [];
-
-  const sourceColors = {Direct:'#4f6ef7',Search:'#22c55e',Social:'#f59e0b',Referrals:'#ec4899','Paid Referrals':'#ef4444',Mail:'#06b6d4'};
-  const sourcesHtml = Object.entries(ts).map(([k,v])=>`
-    <div class="source-row">
-      <span class="source-dot" style="background:${sourceColors[k]||'#64748b'}"></span>
-      <span class="source-name">${k}</span>
-      <div class="source-bar-wrap"><div class="source-bar" style="width:${Math.round(v*100)}%;background:${sourceColors[k]||'#64748b'}"></div></div>
-      <span class="source-pct">${Math.round(v*100)}%</span>
-    </div>`).join('');
-
-  const kwsHtml = kws.slice(0,8).map(k=>`
-    <div class="kw-row">
-      <span class="kw-name">${k.Name||k.keyword||''}</span>
-      <div class="kw-bar-wrap"><div class="kw-bar" style="width:${k.PercentTraffic?Math.round(k.PercentTraffic*100):40}%"></div></div>
-      <span class="kw-vol">${k.EstimatedValue?'~'+Math.round(k.EstimatedValue).toLocaleString()+'/tháng':'N/A'}</span>
-    </div>`).join('') || '<p style="color:#64748b">Không có dữ liệu keyword</p>';
-
-  return `
-  <div class="sw-badge" style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 14px;background:#1a1d2e;border:1px solid #2a2f47;border-radius:8px;width:fit-content">
-    <img src="https://www.similarweb.com/favicon.ico" style="width:16px;height:16px" onerror="this.style.display='none'"/>
-    <span style="color:#94a3b8;font-size:13px">Nguồn: SimilarWeb Free Data</span>
-    <a href="https://www.similarweb.com/website/${domain}/" target="_blank" style="color:#4f6ef7;font-size:12px">Xem đầy đủ →</a>
-  </div>
-  <div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">MONTHLY VISITS</div><div class="stat-value">${latestVisits?'~'+latestVisits.toLocaleString():'N/A'}</div></div>
-    <div class="stat-card"><div class="stat-label">GLOBAL RANK</div><div class="stat-value">${gr?'#'+gr.toLocaleString():'N/A'}</div></div>
-    <div class="stat-card"><div class="stat-label">BOUNCE RATE</div><div class="stat-value">${bounce}</div></div>
-    <div class="stat-card"><div class="stat-label">PAGES/VISIT</div><div class="stat-value">${ppv}</div><div class="stat-sub">Avg: ${dur}</div></div>
-  </div>
-  <div class="two-col">
-    <div class="card"><h3>🔑 TOP KEYWORDS</h3>${kwsHtml}</div>
-    <div class="card"><h3>📊 NGUỒN TRAFFIC</h3>${sourcesHtml||'<p style="color:#64748b">Không có dữ liệu</p>'}</div>
-  </div>`;
+// ── STATE ────────────────────────────────────────────────────
+function showState(id) {
+  ['emptyState','loadingState','errorState'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = s === id ? (s === 'errorState' ? 'block' : 'block') : 'none';
+  });
+  const rc = document.getElementById('resultsContainer');
+  if (rc) rc.classList.remove('show');
 }
 
+// ── ANALYZE ──────────────────────────────────────────────────
 async function analyze() {
   let domain = document.getElementById('domainInput').value.trim();
   if (!domain) return;
-  domain = domain.replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  domain = domain.replace(/^https?:\/\//,'').replace(/\/.*$/,'').toLowerCase().trim();
   document.getElementById('domainInput').value = domain;
 
   const key = getKey();
-  if (!key) { showState('noKeyState'); return; }
+  if (!key) {
+    document.getElementById('apiKeyInput').focus();
+    document.getElementById('apiKeyInput').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('apiKeyInput').style.borderColor = '', 2000);
+    return;
+  }
 
   showState('loadingState');
   document.getElementById('loadingDomain').textContent = domain;
   document.getElementById('analyzeBtn').disabled = true;
 
   try {
-    const [dfsData, swData] = await Promise.allSettled([
-      callClaude(domain, key),
-      fetchSimilarWeb(domain)
-    ]);
-    if (dfsData.status === 'rejected') {
-      throw new Error(dfsData.reason?.message || 'Không thể kết nối Anthropic API. Kiểm tra API key và thử lại.');
-    }
-    const dfs = dfsData.value;
-    if (!dfs || typeof dfs !== 'object') {
-      throw new Error('AI không trả về dữ liệu hợp lệ. Thử lại.');
-    }
-    const sw = swData.status === 'fulfilled' ? swData.value : null;
-    renderResults(domain, dfs, sw);
+    const data = await callClaude(domain, key);
+    if (!data || typeof data !== 'object') throw new Error('AI không trả về dữ liệu hợp lệ. Thử lại.');
+    renderResults(domain, data);
   } catch(e) {
     showState('errorState');
     document.getElementById('errorTitle').textContent = 'Lỗi phân tích';
-    document.getElementById('errorMsg').textContent = e.message || 'Không thể kết nối. Kiểm tra API key và thử lại.';
+    document.getElementById('errorMsg').textContent = e.message || 'Không thể kết nối. Kiểm tra API key.';
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
   }
 }
 
+// ── CALL CLAUDE ──────────────────────────────────────────────
 async function callClaude(domain, key) {
   const prompt = `Phân tích domain: ${domain}
 
-Trả về JSON hợp lệ (KHÔNG có markdown, KHÔNG có \`\`\`). Cấu trúc chính xác:
+Trả về JSON hợp lệ (KHÔNG markdown, KHÔNG \`\`\`json). Cấu trúc:
 {
   "overview": {
-    "monthly_visits": "string ước tính (vd: ~5K-15K/tháng hoặc N/A)",
-    "global_rank": "string (vd: #2,935,484 hoặc Không xác định)",
+    "monthly_visits": "ước tính vd ~50K-100K/tháng",
+    "global_rank": "vd #1,234,567",
+    "country_rank": "vd #12,345",
     "country": "VN",
-    "country_rank": "string (vd: VN #44,606 hoặc Không xác định)",
-    "bounce_rate": "string % (vd: ~65% hoặc N/A)",
-    "pages_per_visit": "string (vd: ~2.5 hoặc N/A)",
-    "avg_duration": "string (vd: 2:30 hoặc N/A)"
+    "bounce_rate": "vd ~60%",
+    "pages_per_visit": "vd ~3.2",
+    "avg_duration": "vd 2:45"
   },
   "traffic_sources": [
     {"name": "direct", "pct": 35},
@@ -370,83 +291,66 @@ Trả về JSON hợp lệ (KHÔNG có markdown, KHÔNG có \`\`\`). Cấu trúc
     {"name": "referral", "pct": 10}
   ],
   "keywords": [
-    {"kw": "từ khóa", "vol": "~500/tháng", "bar": 80},
-    {"kw": "từ khóa 2", "vol": "~200/tháng", "bar": 45}
+    {"kw": "từ khóa chính", "vol": "~5,000/tháng", "bar": 90},
+    {"kw": "từ khóa 2", "vol": "~2,000/tháng", "bar": 60}
   ],
   "ads": {
-    "running": true or false,
+    "running": true,
     "platforms": ["Google Ads", "Facebook Ads"],
-    "note": "mô tả ngắn"
+    "note": "mô tả ngắn v�� chiến lược ads"
   },
   "company": {
     "name": "Tên công ty",
     "industry": "Ngành",
-    "founded_year": "Năm thành lập công ty (nếu biết)",
-    "domain_created": "Năm tạo domain (nếu biết)",
-    "employees": "Quy mô nhân sự (nếu biết)",
-    "hq": "Trụ sở (nếu biết)",
-    "description": "Mô tả 2-3 câu về công ty/website này"
+    "founded_year": "2015",
+    "domain_created": "2014",
+    "employees": "50-200",
+    "hq": "TP.HCM, VN",
+    "description": "Mô tả 2-3 câu về công ty"
   },
   "whois": {
-    "registrar": "Nhà đăng ký domain",
-    "created": "Năm/ngày tạo domain",
-    "expires": "Năm hết hạn (nếu biết)",
-    "tech_stack": ["nền tảng web nếu biết"]
+    "registrar": "Nhà đăng ký",
+    "created": "2014",
+    "expires": "2025",
+    "tech_stack": ["WordPress", "Cloudflare"]
   },
-  "confidence": "high/medium/low"
+  "confidence": "high"
 }
 
-Quy tắc: Điền đầy đủ nhất có thể dựa trên kiến thức. Nếu không biết, dùng "N/A" (không để trống). Không xin lỗi, không giải thích ngoài JSON.`;
+Điền đầy đủ nhất có thể. Nếu không biết dùng "N/A". KHÔNG giải thích ngoài JSON.`;
 
-  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-request-override': 'allow'
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
 
-  let data;
-  if (isLocal) {
-    // Dùng Python proxy khi chạy local
-    const res = await fetch('/analyze', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ domain, api_key: key })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP ${res.status}`);
-    }
-    data = await res.json();
-  } else {
-    // Gọi thẳng Anthropic API khi deploy HTTPS (Netlify, v.v.)
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-request-override': 'allow'
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-    const json = await res.json();
-    const text = json.content?.[0]?.text || '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('AI không trả về JSON. Response: ' + text.slice(0, 100));
-    try {
-      data = JSON.parse(match[0]);
-    } catch(parseErr) {
-      throw new Error('Không parse được JSON từ AI: ' + parseErr.message);
-    }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = err.error?.message || '';
+    if (res.status === 401) throw new Error('API key không hợp lệ. Bấm "Đổi key" để nhập lại.');
+    if (res.status === 429) throw new Error('Quá giới hạn API. Chờ vài giây rồi th�m lại.');
+    throw new Error(msg || `Lỗi HTTP ${res.status}`);
   }
-  return data;
+
+  const json = await res.json();
+  const text = json.content?.[0]?.text || '';
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('AI không trả về JSON hợp lệ.');
+  return JSON.parse(match[0]);
 }
 
-function renderResults(domain, d, sw) {
+// ── RENDER ───────────────────────────────────────────────────
+function renderResults(domain, d) {
   const o = d.overview || {};
   const c = d.company || {};
   const w = d.whois || {};
@@ -454,157 +358,147 @@ function renderResults(domain, d, sw) {
   const keywords = d.keywords || [];
   const sources = d.traffic_sources || [];
 
-  const confidenceLabel = { high: '🟢 Độ tin cậy cao', medium: '🟡 Ước tính', low: '🔴 Dữ liệu hạn chế' }[d.confidence] || '🟡 Ước tính';
-  const confidenceTag = { high: 'green', medium: 'yellow', low: 'red' }[d.confidence] || 'yellow';
+  const confLabel = { high:'🟢 Tin cậy cao', medium:'🟡 Ước tính', low:'🔴 Dữ liệu hạn chế' }[d.confidence] || '🟡 Ước tính';
+  const confColor = { high:'var(--green)', medium:'var(--yellow)', low:'var(--red)' }[d.confidence] || 'var(--yellow)';
+  const confPct = { high:90, medium:55, low:25 }[d.confidence] || 55;
 
-  let html = `
-  <div class="domain-hero">
-    <div class="domain-favicon">
-      <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" onerror="this.parentNode.innerHTML='🌐'" />
-    </div>
-    <div class="domain-info">
-      <h1>${domain}</h1>
-      <p>${c.name && c.name !== 'N/A' ? c.name : ''} ${c.industry && c.industry !== 'N/A' ? '· ' + c.industry : ''}</p>
-      <div class="domain-tags">
-        <span class="tag ${confidenceTag}">${confidenceLabel}</span>
-        ${c.hq && c.hq !== 'N/A' ? `<span class="tag">📍 ${c.hq}</span>` : ''}
-        ${ads.running ? '<span class="tag green">💰 Đang chạy Ads</span>' : '<span class="tag">📊 Không có Ads</span>'}
-      </div>
-    </div>
-  </div>
+  const kwHtml = keywords.slice(0,6).map(k => `
+    <div class="kw-row">
+      <span class="kw">${k.kw}</span>
+      <div class="kw-bar-wrap"><div class="kw-bar" style="width:${k.bar||50}%"></div></div>
+      <span class="vol">${k.vol}</span>
+    </div>`).join('') || '<p style="color:var(--muted);font-size:13px">Không có dữ liệu</p>';
 
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <div class="label">Monthly Visits</div>
-      <div class="value" style="font-size:18px">${o.monthly_visits || 'N/A'}</div>
-      <div class="sub">Ước tính lượt truy cập/tháng</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">Global Rank</div>
-      <div class="value" style="font-size:18px">${o.global_rank || 'N/A'}</div>
-      <div class="sub">Xếp hạng toàn cầu</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">Country Rank</div>
-      <div class="value" style="font-size:16px">${o.country_rank || 'N/A'}</div>
-      <div class="sub">Xếp hạng tại ${o.country || 'VN'}</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">Bounce Rate</div>
-      <div class="value">${o.bounce_rate || 'N/A'}</div>
-      <div class="sub">Avg: ${o.avg_duration || 'N/A'} · ${o.pages_per_visit || 'N/A'} trang/lượt</div>
-    </div>
-  </div>
+  const srcHtml = sources.slice(0,6).map((s,i) => `
+    <div class="src-row">
+      <div class="src-dot" style="background:${SRC_COLORS[i%SRC_COLORS.length]}"></div>
+      <span class="src-name">${SRC_NAMES[s.name]||s.name}</span>
+      <div class="src-bar-wrap"><div class="src-bar" style="width:${s.pct}%;background:${SRC_COLORS[i%SRC_COLORS.length]}"></div></div>
+      <span class="src-pct">${s.pct}%</span>
+    </div>`).join('') || '<p style="color:var(--muted);font-size:13px">Không có dữ liệu</p>';
 
-  <div class="two-col">
-    <div class="section-card">
-      <h3>🔑 Top Keywords</h3>
-      <div class="keyword-list">
-        ${keywords.slice(0,6).map(k => `
-          <div class="keyword-row">
-            <span class="kw">${k.kw}</span>
-            <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:${k.bar||50}%"></div></div>
-            <span class="vol">${k.vol}</span>
-          </div>
-        `).join('') || '<p style="color:var(--muted);font-size:14px">Không có dữ liệu</p>'}
+  const dfsHtml = `
+    <div class="domain-hero">
+      <div class="domain-favicon">
+        <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" onerror="this.parentNode.innerHTML='🌐'" />
       </div>
-    </div>
-    <div class="section-card">
-      <h3>📡 Nguồn Traffic</h3>
-      <div class="source-list">
-        ${sources.slice(0,6).map((s, i) => `
-          <div class="source-row">
-            <div class="source-dot" style="background:${SOURCE_COLORS[i % SOURCE_COLORS.length]}"></div>
-            <span class="source-name">${SOURCE_NAMES[s.name] || s.name}</span>
-            <div class="source-bar-wrap"><div class="source-bar" style="width:${s.pct}%;background:${SOURCE_COLORS[i % SOURCE_COLORS.length]}"></div></div>
-            <span class="source-pct">${s.pct}%</span>
-          </div>
-        `).join('') || '<p style="color:var(--muted);font-size:14px">Không có dữ liệu</p>'}
-      </div>
-    </div>
-  </div>
-
-  <div class="two-col">
-    <div class="section-card">
-      <h3>🏢 Thông Tin Doanh Nghiệp</h3>
-      <div class="company-grid">
-        <div class="company-field">
-          <div class="cf-label">Tên công ty</div>
-          <div class="cf-value">${c.name || 'N/A'}</div>
+      <div class="domain-info">
+        <h1>${domain}</h1>
+        <p>${[c.name, c.industry].filter(x=>x&&x!=='N/A').join(' · ') || 'Đang phân tích...'}</p>
+        <div class="tags">
+          <span class="tag ${d.confidence==='high'?'green':d.confidence==='low'?'red':'yellow'}">${confLabel}</span>
+          ${c.hq && c.hq!=='N/A' ? `<span class="tag">📍 ${c.hq}</span>` : ''}
+          ${ads.running ? '<span class="tag green">💰 Đang chạy Ads</span>' : '<span class="tag">📊 Không có Ads</span>'}
         </div>
-        <div class="company-field">
-          <div class="cf-label">Ngành</div>
-          <div class="cf-value">${c.industry || 'N/A'}</div>
-        </div>
-        <div class="company-field">
-          <div class="cf-label">Năm thành lập (Cty)</div>
-          <div class="cf-value">${c.founded_year || 'N/A'}</div>
-        </div>
-        <div class="company-field">
-          <div class="cf-label">Năm tạo website</div>
-          <div class="cf-value">${c.domain_created || w.created || 'N/A'}</div>
-        </div>
-        <div class="company-field">
-          <div class="cf-label">Nhân sự</div>
-          <div class="cf-value">${c.employees || 'N/A'}</div>
-        </div>
-        <div class="company-field">
-          <div class="cf-label">Trụ sở</div>
-          <div class="cf-value">${c.hq || 'N/A'}</div>
-        </div>
-      </div>
-      ${c.description && c.description !== 'N/A' ? `<div class="company-desc">${c.description}</div>` : ''}
-    </div>
-
-    <div class="section-card">
-      <h3>💰 Quảng Cáo & WHOIS</h3>
-      <div class="ads-badge ${ads.running ? 'yes' : 'no'}">
-        ${ads.running ? '✅ Đang chạy Ads' : '⬜ Không chạy Ads'}
-      </div>
-      ${ads.running && ads.platforms?.length ? `<p style="font-size:13px;color:var(--muted2);margin-bottom:14px">Kênh: ${ads.platforms.join(', ')}</p>` : ''}
-      ${ads.note && ads.note !== 'N/A' ? `<p style="font-size:13px;color:var(--muted2);margin-bottom:16px">${ads.note}</p>` : ''}
-      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
-        <h3 style="margin-bottom:12px">🌍 Domain Info</h3>
-        <div class="whois-grid">
-          <div class="company-field">
-            <div class="cf-label">Registrar</div>
-            <div class="cf-value" style="font-size:13px">${w.registrar || 'N/A'}</div>
-          </div>
-          <div class="company-field">
-            <div class="cf-label">Tạo ngày</div>
-            <div class="cf-value" style="font-size:13px">${w.created || 'N/A'}</div>
-          </div>
-          <div class="company-field">
-            <div class="cf-label">Hết hạn</div>
-            <div class="cf-value" style="font-size:13px">${w.expires || 'N/A'}</div>
-          </div>
-          <div class="company-field">
-            <div class="cf-label">Tech Stack</div>
-            <div class="cf-value" style="font-size:13px">${(w.tech_stack || []).join(', ') || 'N/A'}</div>
-          </div>
+        <div class="confidence-bar" style="margin-top:10px;max-width:200px">
+          <div class="confidence-fill" style="width:${confPct}%;background:${confColor}"></div>
         </div>
       </div>
     </div>
-  </div>
 
-  </div>`;
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="label">Monthly Visits</div>
+        <div class="value">${o.monthly_visits||'N/A'}</div>
+        <div class="sub">Ước tính/tháng</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Global Rank</div>
+        <div class="value" style="font-size:16px">${o.global_rank||'N/A'}</div>
+        <div class="sub">Toàn cầu</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Country Rank</div>
+        <div class="value" style="font-size:16px">${o.country_rank||'N/A'}</div>
+        <div class="sub">Tại ${o.country||'VN'}</div>
+      </div>
+      <div class="metric-card">
+        <div class="label">Bounce Rate</div>
+        <div class="value">${o.bounce_rate||'N/A'}</div>
+        <div class="sub">${o.pages_per_visit||'N/A'} trang · ${o.avg_duration||'N/A'}</div>
+      </div>
+    </div>
 
-  const fullHtml = `
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('dfs',this)">📊 DataForSEO + AI</button>
-    <button class="tab-btn" onclick="switchTab('sw',this)">🌐 SimilarWeb</button>
-  </div>
-  <div id="tab-dfs" class="tab-panel">${html}</div>
-  <div id="tab-sw" class="tab-panel" style="display:none">${renderSwTab(domain, sw)}</div>`;
+    <div class="two-col">
+      <div class="section-card">
+        <h3>🔑 Top Keywords</h3>
+        ${kwHtml}
+      </div>
+      <div class="section-card">
+        <h3>📡 Nguồn Traffic</h3>
+        ${srcHtml}
+      </div>
+    </div>
 
-  ['emptyState','loadingState','errorState','noKeyState'].forEach(s => {
-    document.getElementById(s).style.display = 'none';
-  });
-  const container = document.getElementById('resultsContainer');
-  container.innerHTML = fullHtml;
-  container.classList.add('show');
+    <div class="two-col">
+      <div class="section-card">
+        <h3>🏢 Doanh Nghiệp</h3>
+        <div class="company-grid">
+          <div><div class="cf-label">Tên công ty</div><div class="cf-value">${c.name||'N/A'}</div></div>
+          <div><div class="cf-label">Ngành</div><div class="cf-value">${c.industry||'N/A'}</div></div>
+          <div><div class="cf-label">Năm TL công ty</div><div class="cf-value">${c.founded_year||'N/A'}</div></div>
+          <div><div class="cf-label">Năm tạo domain</div><div class="cf-value">${c.domain_created||w.created||'N/A'}</div></div>
+          <div><div class="cf-label">Nhân sự</div><div class="cf-value">${c.employees||'N/A'}</div></div>
+          <div><div class="cf-label">Trụ sở</div><div class="cf-value">${c.hq||'N/A'}</div></div>
+        </div>
+        ${c.description&&c.description!=='N/A'?`<div class="company-desc">${c.description}</div>`:''}
+      </div>
+      <div class="section-card">
+        <h3>💰 Ads & WHOIS</h3>
+        <div class="ads-badge ${ads.running?'yes':'no'}">
+          ${ads.running?'✅ Đang chạy Ads':'⬜ Không chạy Ads'}
+        </div>
+        ${ads.running&&ads.platforms?.length?`<p style="font-size:12px;color:var(--muted2);margin-bottom:10px">Kênh: ${ads.platforms.join(', ')}</p>`:''}
+        ${ads.note&&ads.note!=='N/A'?`<p style="font-size:12px;color:var(--muted2);margin-bottom:14px">${ads.note}</p>`:''}
+        <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+          <div class="whois-grid">
+            <div><div class="cf-label">Registrar</div><div class="cf-value" style="font-size:12px">${w.registrar||'N/A'}</div></div>
+            <div><div class="cf-label">Tạo ngày</div><div class="cf-value" style="font-size:12px">${w.created||'N/A'}</div></div>
+            <div><div class="cf-label">Hết hạn</div><div class="cf-value" style="font-size:12px">${w.expires||'N/A'}</div></div>
+            <div><div class="cf-label">Tech Stack</div><div class="cf-value" style="font-size:12px">${(w.tech_stack||[]).join(', ')||'N/A'}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  const swHtml = `
+    <div class="sw-cta">
+      <div style="font-size:40px;margin-bottom:12px">🌐</div>
+      <h3>Xem dữ liệu thực từ SimilarWeb</h3>
+      <p>SimilarWeb cung cấp traffic chính xác, top pages, audience demographics và competitive analysis.<br>Bấm để mở trang SimilarWeb của <strong>${domain}</strong>.</p>
+      <a class="btn-sw" href="https://www.similarweb.com/website/${domain}/" target="_blank">
+        Mở SimilarWeb →
+      </a>
+    </div>`;
+
+  document.getElementById('resultsContainer').innerHTML = `
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('ai',this)">🤖 AI Analysis</button>
+      <button class="tab-btn" onclick="switchTab('sw',this)">🌐 SimilarWeb</button>
+    </div>
+    <div id="tab-ai" class="tab-panel active">${dfsHtml}</div>
+    <div id="tab-sw" class="tab-panel">${swHtml}</div>`;
+
+  showState('');
+  document.getElementById('resultsContainer').classList.add('show');
 }
 
 function switchTab(id, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+document.getElementById('domainInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+document.getElementById('apiKeyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveKey();
+});
+
+initKeyBar();
+</script>
+</body>
+</html>
