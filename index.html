@@ -303,8 +303,8 @@ function renderResults(domain, d) {
   const keywords = d.keywords || [];
   const sources = d.traffic_sources || [];
 
-  const confLabel = { high:'🟢 Tin cậy cao', medium:'🟡 Ước tính', low:'🔴 Dữ liệu han chế' }[d.confidence] || '® Ước tính';
-  const confColor = { high:'var(--green)', medium:'var(--yellow)', low:'ow:'var(--red)' }[d.confidence] || 'var(--yellow)';
+  const confLabel = { high:'🟢 Tin cậy cao', medium:'🟡 Ước tính', low:'🔴 Dữ liệu hạn chế' }[d.confidence] || '🟡 Ước tính';
+  const confColor = { high:'var(--green)', medium:'var(--yellow)', low:'var(--red)' }[d.confidence] || 'var(--yellow)';
   const confPct = { high:90, medium:55, low:25 }[d.confidence] || 55;
 
   const kwHtml = keywords.slice(0,6).map(k => `
@@ -409,8 +409,8 @@ function renderResults(domain, d) {
   const swHtml = `
     <div class="sw-cta">
       <div style="font-size:40px;margin-bottom:12px">🌐</div>
-      <h3>Xem dữ liệu thực từ SimilarWeb</h3>
-      <p>SimilarWeb cung cấp traffic chính xác, top pages, audience demographics và competitive analysis.<br>Bấm để mở trang SimilarWeb của <strong>${domain}</strong>.</p>
+      <h3>Xem dữ liệu thực tủ SimilarWeb</h3>
+      <p>SimilarWeb cung cấp traffic chính xác, top pages, audience demographics và competitive analysis.<br>Bấm để mở trang SimilarWeb rọi <strong>${domain}</strong>.</p>
       <a class="btn-sw" href="https://www.similarweb.com/website/${domain}/" target="_blank">
         Mở SimilarWeb →
       </a>
