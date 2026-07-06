@@ -216,18 +216,15 @@ const SOURCE_NAMES = { direct:'Direct', organic_search:'Organic Search', paid_se
 
 function getKey() { return localStorage.getItem('ga_intel_api_key') || ''; }
 function openSettings() {
-  var cur = getKey();
-  var k = window.prompt('Nhap Anthropic API Key:', cur || '');
-  if (k !== null) {
-    k = k.trim();
-    if (k) { localStorage.setItem('ga_intel_api_key', k); alert('Da luu API key!'); }
+  var m = document.getElementById('settingsModal');
+  document.getElementById('apiKeyInput').value = getKey();
+  m.style.display = 'flex';
+}
     else { localStorage.removeItem('ga_intel_api_key'); }
   }
 }
 function closeSettings() {
-  var m = document.getElementById('settingsModal');
-  m.style.display = 'none';
-  m.classList.remove('open');
+  document.getElementById('settingsModal').style.display = 'none';
 }
 function saveSettings() {
   const k = document.getElementById('apiKeyInput').value.trim();
