@@ -216,10 +216,13 @@ const SOURCE_NAMES = { direct:'Direct', organic_search:'Organic Search', paid_se
 
 function getKey() { return localStorage.getItem('ga_intel_api_key') || ''; }
 function openSettings() {
-  document.getElementById('apiKeyInput').value = getKey();
-  var m = document.getElementById('settingsModal');
-  m.style.display = 'flex';
-  m.classList.add('open');
+  var cur = getKey();
+  var k = window.prompt('Nhap Anthropic API Key:', cur || '');
+  if (k !== null) {
+    k = k.trim();
+    if (k) { localStorage.setItem('ga_intel_api_key', k); alert('Da luu API key!'); }
+    else { localStorage.removeItem('ga_intel_api_key'); }
+  }
 }
 function closeSettings() {
   var m = document.getElementById('settingsModal');
